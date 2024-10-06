@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews Dashboard</title>
+    <link href="https://unpkg.com/@shopify/polaris@9.0.0-rc.1/build/esm/styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOMH9k9Bzdj48e8fE1e91ztQzSnpIkF1tw1rXk5" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: 'ShopifySans', sans-serif;
+            margin: 0;
+            background-color: #f4f6f8;
+            display: flex;
+            height: 100vh; /* Full height */
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #b0b0b0, #e0e0e0); /* Lighter gradient */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sidebar h1 {
+            font-size: 1.5rem;
+            color: #3C3D37;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #3C3D37;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+            justify-content: center;
+        }
+
+        .sidebar a:hover, .sidebar a.selected {
+            background-color: #3C3D37;
+            color: white;
+            font-weight: bold;
+        }
+
+        .sidebar a i {
+            margin-right: 8px;
+        }
+
+        /* Main content area */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto; /* Scrollable review cards section */
+            height: 100vh; /* Ensure the content takes full height */
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-bar select, .filter-bar input {
+            padding: 6px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .filter-bar label {
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Review cards */
+        .review-card {
+            position: relative;
+            background-color: #ffffff;
+            color: #1E201E;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rating {
+            color: #ffbc00;
+        }
+
+        .badge {
+            position: absolute;
+            top: 0px;
+            right: 10px;
+            display: inline-block;
+            background-color: #3C3D37;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .review-content {
+            margin-bottom: 15px;
+            background-color: #f8f8f8; /* Light grey background */
+            padding: 10px; /* Added padding */
+            border-radius: 4px; /* Rounded corners */
+        }
+
+        .edit-button, .reply-button, .copy-button {
+            background-color: #3C3D37;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-bottom: 10px;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+
+        .edit-button:hover, .reply-button:hover, .copy-button:hover {
+            background-color: #0056b3;
+        }
+
+        .review-attribute {
+            font-size: 12px; /* Smaller font for review attributes */
+            margin: 5px 0; /* Spacing between attributes */
+        }
+
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination a {
+            margin: 0 5px;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #ffffff; /* Match review card background */
+            margin: 5% auto; /* Center the modal */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%; /* Increased size to 90% */
+            max-width: 800px; /* Increased max width */
+            height: 320px; /* Set height to 320px */
+            border-radius: 8px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Textarea Style */
+        #modal-reply-text {
+            width: 100%; /* Full width */
+            height: 200px; /* Increased height */
+            border: 1px solid #ccc; /* Border */
+            border-radius: 4px; /* Rounded corners */
+            padding: 10px; /* Padding for text */
+            resize: none; /* Disable resizing */
+            background-color: #f5f5f5; /* Same background as review */
+        }
+
+        /* Mobile Responsive Changes */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 10px;
+                display: none;
+            }
+
+            .sidebar.show {
+                display: flex;
+            }
+
+            .content {
+                padding: 10px;
+                height: auto;
+            }
+
+            .toggle-menu {
+                display: block;
+                padding: 10px;
+                background-color: #3C3D37;
+                color: white;
+                border: none;
+                width: 100%;
+                text-align: center;
+                font-size: 16px;
+                cursor: pointer;
+                margin-bottom: 20px;
+            }
+
+            select {
+                width: 100%; /* Full width for mobile */
+            }
+        }
+
+        /* Hide toggle button on desktop */
+        @media (min-width: 769px) {
+            .toggle-menu {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toggle Button for Mobile -->
+    <button class="toggle-menu" onclick="toggleMenu()">☰ Menu</button>
+
+    <div class="sidebar">
+        <h1>Reviews Dashboard</h1>
+        <nav>
+            <a href="#" class="selected"><i class="fas fa-comment-dots"></i> Reviews Detail</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Analytics</a>
+        </nav>
+    </div>
+
+    <div class="content">
+        <div class="filter-bar">
+            <div>
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date">
+            </div>
+            <div>
+                <label for="rating-filter">Filter by Rating:</label>
+                <select id="rating-filter">
+                    <option value="">All Ratings</option>
+                    <option value="5">★★★★★</option>
+                    <option value="4">★★★★</option>
+                    <option value="3">★★★</option>
+                    <option value="2">★★</option>
+                    <option value="1">★</option>
+                </select>
+            </div>
+            <div>
+                <label for="app-name-filter">Filter by App Name:</label>
+                <select id="app-name-filter">
+                    <option value="">All Apps</option>
+                    <option value="VSK">VSK</option>
+                    <option value="VDK">VDK</option>
+                    <option value="VIA">VIA</option>
+                    <option value="ATA">ATA</option>
+                    <option value="VTK">VTK</option>
+                </select>
+            </div>
+            <div>
+                <label for="agent-name-filter">Filter by Agent Name:</label>
+                <select id="agent-name-filter">
+                    <option value="">All Agents</option>
+                    <option value="None">None</option>
+                    <option value="Bhushan">Bhushan</option>
+                    <option value="Nikhilesh">Nikhilesh</option>
+                    <option value="Lax">Lax</option>
+                    <option value="Numaan">Numaan</option>
+                    <option value="Lohit">Lohit</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="review-count" id="review-count">Total Reviews: 5</div>
+
+        <div class="review-card" data-date="October 1, 2024" data-rating="5" data-app-name="VSK" data-agent="Bhushan">
+            <div class="badge">VSK</div>
+            <div class="review-header">
+                <div>
+                    <strong>Eco Gems Store Name</strong><br>
+                    <small>October 1, 2024</small>
+                </div>
+                <div class="rating">★★★★★</div>
+            </div>
+            <div class="review-content">
+                <p>Support quick, very helpful</p>
+            </div>
+            <div id="assigned-agent-1" class="review-attribute">Agent Name: Bhushan</div>
+            <div class="review-attribute">Shopify Plan: Professional</div>
+            <div class="review-attribute">Paying to Shopify: Yes</div>
+            <div class="review-attribute">Store Created On: 2024-09-16</div>
+            <button class="edit-button" onclick="toggleAgentSelect(1)">Edit</button>
+            <button class="reply-button" onclick="generateReply(1)">Generate Reply</button>
+            <select id="agent-select-1" style="display:none; width: 100%;" onchange="updateAssignedAgent(1)">
+                <option value="Bhushan">Bhushan</option>
+                <option value="Nikhilesh">Nikhilesh</option>
+                <option value="Lax">Lax</option>
+                <option value="Numaan">Numaan</option>
+                <option value="Lohit">Lohit</option>
+            </select>
+        </div>
+
+        <div class="review-card" data-date="September 30, 2024" data-rating="1" data-app-name="VDK" data-agent="Bhushan">
+            <div class="badge">VDK</div>
+            <div class="review-header">
+                <div>
+                    <strong>A L A D I S I O</strong><br>
+                    <small>September 30, 2024</small>
+                </div>
+                <div class="rating">★☆☆☆☆</div>
+            </div>
+            <div class="review-content">
+                <p>Just found out there are some apps by far cheaper. Not recommended</p>
+            </div>
+            <div id="assigned-agent-2" class="review-attribute">Agent Name: Bhushan</div>
+            <div class="review-attribute">Shopify Plan: Professional</div>
+            <div class="review-attribute">Paying to Shopify: Yes</div>
+            <div class="review-attribute">Store Created On: 2024-09-16</div>
+            <button class="edit-button" onclick="toggleAgentSelect(2)">Edit</button>
+            <button class="reply-button" onclick="generateReply(2)">Generate Reply</button>
+            <select id="agent-select-2" style="display:none; width: 100%;" onchange="updateAssignedAgent(2)">
+                <option value="Bhushan">Bhushan</option>
+                <option value="Nikhilesh">Nikhilesh</option>
+                <option value="Lax">Lax</option>
+                <option value="Numaan">Numaan</option>
+                <option value="Lohit">Lohit</option>
+            </select>
+        </div>
+
+        <div class="review-card" data-date="September 25, 2024" data-rating="5" data-app-name="VIA" data-agent="Numaan">
+            <div class="badge">VIA</div>
+            <div class="review-header">
+                <div>
+                    <strong>esteezoutlet</strong><br>
+                    <small>September 25, 2024</small>
+                </div>
+                <div class="rating">★★★★★</div>
+            </div>
+            <div class="review-content">
+                <p>Highly recommend! Their live chat is very helpful, they are quick and friendly and get the job done each time. 10/10</p>
+            </div>
+            <div id="assigned-agent-3" class="review-attribute">Agent Name: Numaan</div>
+            <div class="review-attribute">Shopify Plan: Professional</div>
+            <div class="review-attribute">Paying to Shopify: Yes</div>
+            <div class="review-attribute">Store Created On: 2024-09-16</div>
+            <button class="edit-button" onclick="toggleAgentSelect(3)">Edit</button>
+            <button class="reply-button" onclick="generateReply(3)">Generate Reply</button>
+            <select id="agent-select-3" style="display:none; width: 100%;" onchange="updateAssignedAgent(3)">
+                <option value="Bhushan">Bhushan</option>
+                <option value="Nikhilesh">Nikhilesh</option>
+                <option value="Lax">Lax</option>
+                <option value="Numaan">Numaan</option>
+                <option value="Lohit">Lohit</option>
+            </select>
+        </div>
+
+        <div class="review-card" data-date="September 20, 2024" data-rating="4" data-app-name="ATA" data-agent="">
+            <div class="badge">ATA</div>
+            <div class="review-header">
+                <div>
+                    <strong>macgyveringx</strong><br>
+                    <small>September 20, 2024</small>
+                </div>
+                <div class="rating">★★★★☆</div>
+            </div>
+            <div class="review-content">
+                <p>Great service but could improve response time</p>
+            </div>
+            <div id="assigned-agent-4" class="review-attribute">Agent Name: None</div>
+            <div class="review-attribute">Shopify Plan: Professional</div>
+            <div class="review-attribute">Paying to Shopify: Yes</div>
+            <div class="review-attribute">Store Created On: 2024-09-16</div>
+            <button class="edit-button" onclick="toggleAgentSelect(4)">Edit</button>
+            <button class="reply-button" onclick="generateReply(4)">Generate Reply</button>
+            <select id="agent-select-4" style="display:none; width: 100%;" onchange="updateAssignedAgent(4)">
+                <option value="">None</option>
+                <option value="Bhushan">Bhushan</option>
+                <option value="Nikhilesh">Nikhilesh</option>
+                <option value="Lax">Lax</option>
+                <option value="Numaan">Numaan</option>
+                <option value="Lohit">Lohit</option>
+            </select>
+        </div>
+
+        <div class="pagination">
+            <a href="#">« Previous</a>
+            <a href="#">1</a>
+            <a href="#">2</a>
+            <a href="#">3</a>
+            <a href="#">Next »</a>
+        </div>
+
+        <div id="replyModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>Suggested reply:</h2>
+                <textarea id="modal-reply-text" style="background-color: #f5f5f5; padding: 10px;"></textarea>
+                <button class="copy-button" onclick="copyReply()">Copy reply</button>
+            </div>
+        </div>
+
+        <script>
+            function toggleAgentSelect(id) {
+                const select = document.getElementById(`agent-select-${id}`);
+                select.style.display = (select.style.display === 'none' || select.style.display === '') ? 'block' : 'none';
+                select.style.width = "100%"; // Make dropdown full width
+                select.style.fontSize = "14px"; // Set a reasonable font size
+                select.style.padding = "8px"; // Set padding for dropdown
+                select.style.marginTop = "5px"; // Add margin to the top
+            }
+
+            function updateAssignedAgent(id) {
+                const select = document.getElementById(`agent-select-${id}`);
+                const selectedAgent = select.options[select.selectedIndex].text;
+                document.getElementById(`assigned-agent-${id}`).innerText = `Agent Name: ${selectedAgent || 'None'}`;
+                select.style.display = 'none';
+            }
+
+            function filterReviews() {
+                const startDateInput = document.getElementById('start-date').value;
+                const endDateInput = document.getElementById('end-date').value;
+                const ratingFilter = document.getElementById('rating-filter').value;
+                const appNameFilter = document.getElementById('app-name-filter').value;
+                const agentNameFilter = document.getElementById('agent-name-filter').value;
+
+                const reviews = document.querySelectorAll('.review-card');
+                let visibleCount = 0;
+
+                reviews.forEach(review => {
+                    const reviewDate = new Date(review.dataset.date);
+                    const reviewRating = review.dataset.rating;
+                    const reviewAppName = review.dataset.appName;
+                    const reviewAgentName = review.dataset.agent || 'None';
+
+                    const withinDateRange = (!startDateInput || reviewDate >= new Date(startDateInput)) &&
+                                             (!endDateInput || reviewDate <= new Date(endDateInput));
+                    const matchesRating = !ratingFilter || reviewRating === ratingFilter;
+                    const matchesAppName = !appNameFilter || reviewAppName === appNameFilter;
+                    const matchesAgentName = !agentNameFilter || (agentNameFilter === 'None' && reviewAgentName === 'None') || reviewAgentName === agentNameFilter;
+
+                    if (withinDateRange && matchesRating && matchesAppName && matchesAgentName) {
+                        review.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        review.style.display = 'none';
+                    }
+                });
+
+                document.getElementById('review-count').innerText = `Total Reviews: ${visibleCount}`;
+            }
+
+            function generateReply(id) {
+                const replies = [
+                    "Thank you for your feedback! We're glad you had a positive experience. Our team strives to provide exceptional service and support to all our customers. If you have any further comments or suggestions, feel free to reach out to us!",
+                    "We appreciate your review! Your feedback helps us improve our services. We continuously work to enhance customer experience. Should you have any further questions or feedback, please let us know.",
+                    "Thank you for your comments! We're always striving to provide the best service and your input is valuable to us. If there are any specific areas you think we could improve, we'd love to hear from you.",
+                    "We're sorry to hear you had a negative experience. We'll work to improve. Please feel free to reach out to us directly to discuss any issues you've faced; we're here to help!",
+                    "Thanks for sharing your thoughts! We value your input and take all reviews seriously. Our team is dedicated to making sure every customer has a great experience with us. If there's anything we can do to assist you, let us know."
+                ];
+
+                const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                document.getElementById('modal-reply-text').value = randomReply;
+                document.getElementById('replyModal').style.display = "block"; // Ensure modal displays correctly
+            }
+
+            function closeModal() {
+                document.getElementById('replyModal').style.display = "none";
+            }
+
+            function copyReply() {
+                const replyText = document.getElementById('modal-reply-text').value;
+                navigator.clipboard.writeText(replyText).then(() => {
+                    const copyButton = document.querySelector('.copy-button');
+                    copyButton.innerText = "Copied!";
+                    setTimeout(() => {
+                        copyButton.innerText = "Copy reply";
+                    }, 2000);
+                }, (err) => {
+                    console.error('Could not copy text: ', err);
+                });
+            }
+
+            function toggleMenu() {
+                const sidebar = document.querySelector('.sidebar');
+                sidebar.classList.toggle('show');
+            }
+
+            window.onclick = function(event) {
+                const modal = document.getElementById('replyModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+            };
+
+            document.getElementById('start-date').addEventListener('change', filterReviews);
+            document.getElementById('end-date').addEventListener('change', filterReviews);
+            document.getElementById('rating-filter').addEventListener('change', filterReviews);
+            document.getElementById('app-name-filter').addEventListener('change', filterReviews);
+            document.getElementById('agent-name-filter').addEventListener('change', filterReviews);
+        </script>
+    </div>
+</body>
+</html>
